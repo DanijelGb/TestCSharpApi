@@ -1,7 +1,13 @@
+using Xunit.Sdk;
+
 namespace WebApp;
 
 public static class Utils
 {
+        // Read all mock users from file
+    private static readonly Arr mockUsers = JSON.Parse(
+        File.ReadAllText(FilePath("json", "mock-users.json"))
+    );
     public static int SumInts(int a, int b)
     {
         return a + b;
@@ -71,5 +77,57 @@ public static class Utils
             }
         }
         return newText;
+    }
+    public static Arr CreateMockUsers()
+    {
+        Arr successFullyWrittenUsers = Arr();
+        foreach (var user in mockUsers)
+        {
+            string[] half = user.email.Split("@");
+            user.password = half[0];
+            user.email = half[0] + "1@" + half[1];
+
+            var result = SQLQueryOne(
+                @"INSERT INTO users(firstName,lastName,email,password)
+                VALUES($firstName, $lastName, $email, $password)
+            ", user);
+            // If we get an error from the DB then we haven't added
+            // the mock users, if not we have so add to the successful list
+            if (!result.HasKey("error"))
+            {
+                // The specification says return the user list without password
+                user.Delete("password");
+                successFullyWrittenUsers.Push(user);
+            }
+        }
+
+        return successFullyWrittenUsers;
+    }
+    public static Arr RemoveMockUsers()
+    {
+        Arr deletedUsers = Arr();
+        Arr users = SQLQuery(@"
+        SELECT * 
+        FROM users 
+        WHERE email
+        LIKE '%1@%'");
+
+        var usedToBees = users.Map(user => {
+            Log(user.email);
+        return user.email; // Return email for further processing if needed
+        });
+        
+       foreach(var user in users)
+        {
+            user.Delete("password");
+            deletedUsers.Push(user);
+            Log(user);
+        }
+
+        var result = SQLQuery(@"
+        DELETE FROM users
+        WHERE email LIKE '%1@%'");
+
+        return deletedUsers;
     }
 }

@@ -13,5 +13,5 @@ Globals = Obj(new
 
 Server.Start();
 
-//UtilsTest a = new();
-//a.TestRemoveBadWords();
+//WebApp.Utils.CreateMockUsers();
+//WebApp.Utils.RemoveMockUsers();
